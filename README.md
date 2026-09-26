@@ -79,6 +79,29 @@ docker compose up -d && npm i && npm run migration:run && npm run seed && npm ru
 
 API on http://localhost:3000. Check it: `curl localhost:3000/health`.
 
+### Everything in Docker (Docker Desktop)
+
+One command runs Postgres, Redis, migrations + seed, the API, the dialer, the summary worker and the
+dashboard:
+
+```bash
+cp .env.example .env                              # edit *_HOST_PORT if 5432/6379/3000/8080 are taken
+docker compose --profile app up -d --build
+docker compose ps                                 # migrate shows "Exited (0)", the rest "running"
+```
+
+- Dashboard: http://localhost:8080 (nginx proxies `/api` and `/socket.io` to the API container)
+- API: http://localhost:3000/health
+- Logs: `docker compose logs -f api dialer summary`
+- Load simulation (from your machine, against the containers): `npm i && npm run simulate`
+- Stop: `docker compose --profile app down`. Add `-v` to also wipe the database/Redis volumes.
+- After code changes: `docker compose --profile app up -d --build`
+
+Inside the compose network the containers use `postgres:5432` / `redis:6379`, and the dialer's mock
+telephony posts webhooks to `http://api:3000`. `DATABASE_URL`/`REDIS_URL` in `.env` only matter for
+processes you run on the host (`npm run dev`, `npm test`, the simulator), so point them at the
+published host ports.
+
 > **Without Docker:** point `DATABASE_URL` / `REDIS_URL` in `.env` at your own Postgres (13+) and
 > Redis (BullMQ needs **≥ 5**, recommends **≥ 6.2**; old Windows ports like 3.0 won't work), and create a
 > `mini_dialer_test` database for the tests.

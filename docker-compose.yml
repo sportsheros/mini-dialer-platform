@@ -1,3 +1,37 @@
+# Two ways to use this file:
+#
+#   1. Datastores only (run the Node processes on your machine with npm):
+#        docker compose up -d
+#
+#   2. Everything in containers (Postgres, Redis, migrations+seed, API, dialer, summary, dashboard):
+#        docker compose --profile app up -d --build
+#      Dashboard: http://localhost:${WEB_HOST_PORT:-8080}   API: http://localhost:${API_HOST_PORT:-3000}
+#
+# Host ports are configurable via .env (POSTGRES_HOST_PORT, REDIS_HOST_PORT, API_HOST_PORT,
+# WEB_HOST_PORT) so they don't clash with a Postgres/Redis already installed on your machine.
+# Inside the compose network, containers always talk to postgres:5432 / redis:6379.
+
+x-backend: &backend
+  build: .
+  image: mini-dialer-backend
+  profiles: ['app']
+  restart: unless-stopped
+  # API_KEY, WEBHOOK_SECRET, tuning knobs, ... come from .env; the connection settings below
+  # override the host-oriented values in that file.
+  env_file:
+    - path: .env
+      required: false
+  environment: &backend-env
+    NODE_ENV: production
+    DATABASE_URL: postgresql://dialer:dialer@postgres:5432/mini_dialer
+    REDIS_URL: redis://redis:6379/0
+    MOCK_TELEPHONY_WEBHOOK_URL: http://api:3000/api/webhooks/call-events
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,7 +41,7 @@ services:
       POSTGRES_PASSWORD: dialer
       POSTGRES_DB: mini_dialer
     ports:
-      - '5432:5432'
+      - '${POSTGRES_HOST_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./deploy/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
@@ -22,7 +56,7 @@ services:
     container_name: dialer-redis
     command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - '6379:6379'
+      - '${REDIS_HOST_PORT:-6379}:6379'
     volumes:
       - redisdata:/data
     healthcheck:
@@ -30,6 +64,63 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # One-shot: apply migrations, then load the idempotent demo seed. The app waits for it.
+  migrate:
+    <<: *backend
+    container_name: dialer-migrate
+    restart: 'no'
+    command:
+      ['sh', '-c', 'node node_modules/typeorm/cli.js -d dist/db/data-source.js migration:run && node dist/db/seed.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    container_name: dialer-api
+    command: ['node', 'dist/server.js']
+    environment:
+      <<: *backend-env
+      PORT: '3000'
+    ports:
+      - '${API_HOST_PORT:-3000}:3000'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/health']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  dialer:
+    <<: *backend
+    container_name: dialer-worker
+    command: ['node', 'dist/workers/dialer.worker.js']
+    depends_on:
+      api:
+        condition: service_healthy
+
+  summary:
+    <<: *backend
+    container_name: dialer-summary
+    command: ['node', 'dist/workers/summary.worker.js']
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_KEY: ${API_KEY:-change-me-dev-api-key}
+    image: mini-dialer-web
+    container_name: dialer-web
+    profiles: ['app']
+    restart: unless-stopped
+    ports:
+      - '${WEB_HOST_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:
