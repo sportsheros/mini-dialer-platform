@@ -5,6 +5,8 @@ import { cors } from './middlewares/cors';
 import { rateLimit } from './middlewares/rateLimit';
 import { requestLogger } from './middlewares/requestId';
 import { agentsRouter } from './modules/agents/agents.routes';
+import { campaignsRouter } from './modules/campaigns/campaigns.routes';
+import { dncRouter } from './modules/dnc/dnc.routes';
 import { healthRouter } from './modules/health/health.routes';
 
 /** Builds the Express app without listening, so tests can drive it with Supertest. */
@@ -29,6 +31,8 @@ export function createApp(): Express {
 
   const api = Router();
   api.use('/agents', agentsRouter);
+  api.use('/campaigns', campaignsRouter);
+  api.use('/dnc', dncRouter);
   app.use('/api', rateLimit(), apiKeyAuth, api);
 
   app.use(notFoundHandler);
