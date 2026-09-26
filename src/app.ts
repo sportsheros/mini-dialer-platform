@@ -4,6 +4,7 @@ import { apiKeyAuth } from './middlewares/auth';
 import { cors } from './middlewares/cors';
 import { rateLimit } from './middlewares/rateLimit';
 import { requestLogger } from './middlewares/requestId';
+import { agentsRouter } from './modules/agents/agents.routes';
 import { healthRouter } from './modules/health/health.routes';
 
 /** Builds the Express app without listening, so tests can drive it with Supertest. */
@@ -27,6 +28,7 @@ export function createApp(): Express {
   app.use(healthRouter);
 
   const api = Router();
+  api.use('/agents', agentsRouter);
   app.use('/api', rateLimit(), apiKeyAuth, api);
 
   app.use(notFoundHandler);

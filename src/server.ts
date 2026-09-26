@@ -4,6 +4,8 @@ import { env } from './config/env';
 import { AppDataSource } from './db/data-source';
 import { logger } from './lib/logger';
 import { redis } from './lib/redis';
+import { initSocket } from './lib/socket';
+import { agentPool } from './modules/agents/agentPool';
 import { createApp } from './app';
 
 async function main(): Promise<void> {
@@ -12,9 +14,12 @@ async function main(): Promise<void> {
   logger.info('Database connected');
   await redis.ping();
   logger.info('Redis connected');
+  // Redis is a derived cache of agent availability: rebuild it from the source of truth.
+  await agentPool.rebuildFromDb();
 
   const app = createApp();
   const server = http.createServer(app);
+  const realtime = await initSocket(server);
   await new Promise<void>((resolve) => server.listen(env.PORT, resolve));
   logger.info({ port: env.PORT }, 'HTTP server listening');
 
@@ -30,7 +35,9 @@ async function main(): Promise<void> {
     forceExit.unref();
     try {
       // 1. Stop accepting new connections and let in-flight requests finish.
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+      await realtime.close(); // also disconnects websocket clients so server.close can finish
+      await closed;
       // 2. Close datastores last, after nothing can use them anymore.
       await AppDataSource.destroy();
       await redis.quit();

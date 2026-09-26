@@ -16,7 +16,9 @@ export const AppDataSource = new DataSource({
   migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
   synchronize: false,
   migrationsRun: false,
-  logging: env.DB_LOGGING ? ['query', 'error'] : ['error'],
+  // Query errors are already surfaced by our error handler / callers (many are expected, e.g.
+  // unique violations we map to 409), so TypeORM's own error logging would only add noise.
+  logging: env.DB_LOGGING ? ['query', 'error'] : false,
   extra: {
     max: env.DB_POOL_SIZE,
     // Fail a checkout instead of hanging forever if the pool is exhausted.
