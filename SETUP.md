@@ -104,7 +104,7 @@ seconds.
 ## Step 5 — Check everything is running
 
 ```bash
-docker compose --profile app ps
+docker compose --profile app ps -a
 ```
 
 You should see:
@@ -163,7 +163,7 @@ npm test
 |---|---|
 | Start | `docker compose --profile app up -d` |
 | Stop (data is kept) | `docker compose --profile app down` |
-| Status | `docker compose --profile app ps` |
+| Status | `docker compose --profile app ps -a` |
 | Live logs | `docker compose logs -f api dialer summary` |
 | Reset everything (**deletes all data**) | `docker compose --profile app down -v`, then start again |
 
@@ -195,7 +195,7 @@ See why with `docker compose logs migrate`. Resetting usually fixes it:
 `docker compose --profile app down -v` followed by `docker compose --profile app up -d --build`.
 
 **The dashboard opens but shows "Something went wrong" or "Offline"**
-Check `docker compose --profile app ps` shows `dialer-api` as healthy. If you changed `API_KEY` in
+Check `docker compose --profile app ps -a` shows `dialer-api` as healthy. If you changed `API_KEY` in
 `.env`, rebuild so the dashboard picks it up: `docker compose --profile app up -d --build`.
 
 ---

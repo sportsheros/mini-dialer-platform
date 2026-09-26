@@ -3,12 +3,14 @@ import { API_KEY } from './api/client';
 import { useSocket } from './hooks/useSocket';
 import { CallLogs } from './pages/CallLogs';
 import { Campaigns } from './pages/Campaigns';
+import { Documentation } from './pages/Documentation';
 import { LiveDashboard } from './pages/LiveDashboard';
 
 const ROUTES = {
   '#/': { label: 'Live dashboard', component: LiveDashboard },
   '#/calls': { label: 'Call logs', component: CallLogs },
   '#/campaigns': { label: 'Campaigns', component: Campaigns },
+  '#/docs': { label: 'Documentation', component: Documentation },
 } as const;
 type Route = keyof typeof ROUTES;
 

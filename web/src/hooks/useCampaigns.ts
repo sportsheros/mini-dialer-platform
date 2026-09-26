@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import type { Campaign, CampaignStats } from '../api/types';
 import { useQuery } from './useQuery';
@@ -31,6 +31,7 @@ export function useCampaignStats(campaignIds: string[], intervalMs = 5_000) {
   const key = campaignIds.join(',');
   const idsRef = useRef(campaignIds);
   idsRef.current = campaignIds;
+  const loadRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +45,7 @@ export function useCampaignStats(campaignIds: string[], intervalMs = 5_000) {
         if (!cancelled) setError(err instanceof Error ? err : new Error(String(err)));
       }
     };
+    loadRef.current = load;
     void load();
     const timer = setInterval(load, intervalMs);
     return () => {
@@ -52,5 +54,8 @@ export function useCampaignStats(campaignIds: string[], intervalMs = 5_000) {
     };
   }, [key, intervalMs]);
 
-  return { stats, error };
+  /** Re-fetch now, e.g. right after an upload or start/pause, instead of waiting for the poll. */
+  const refresh = useCallback(() => void loadRef.current(), []);
+
+  return { stats, error, refresh };
 }

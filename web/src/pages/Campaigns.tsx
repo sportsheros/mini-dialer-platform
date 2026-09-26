@@ -69,7 +69,13 @@ function CreateCampaignForm({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function UploadLeadsForm({ campaigns }: { campaigns: Campaign[] }) {
+function UploadLeadsForm({
+  campaigns,
+  onUploaded,
+}: {
+  campaigns: Campaign[];
+  onUploaded: () => void;
+}) {
   const [campaignId, setCampaignId] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -90,6 +96,7 @@ function UploadLeadsForm({ campaigns }: { campaigns: Campaign[] }) {
     setBusy(true);
     try {
       setResult(await api.campaigns.uploadLeads(campaignId, leads));
+      onUploaded();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -114,11 +121,13 @@ function UploadLeadsForm({ campaigns }: { campaigns: Campaign[] }) {
         </select>
       </label>
       <label>
-        Paste CSV (<code>phone,name</code>) or JSON (
-        <code>
-          [{'{'}"phone","name"{'}'}]
-        </code>
-        ), max 5,000
+        <span>
+          Paste CSV (<code>phone,name</code>) or JSON (
+          <code>
+            [{'{'}"phone","name"{'}'}]
+          </code>
+          ), max 5,000
+        </span>
         <textarea
           rows={7}
           value={text}
@@ -145,7 +154,7 @@ function UploadLeadsForm({ campaigns }: { campaigns: Campaign[] }) {
 
 export function Campaigns() {
   const campaigns = useCampaigns();
-  const { stats } = useCampaignStats(
+  const { stats, refresh: refreshStats } = useCampaignStats(
     (campaigns.data ?? []).map((c) => c.id),
     10_000,
   );
@@ -158,6 +167,7 @@ export function Campaigns() {
     try {
       await api.campaigns[action](c.id);
       campaigns.reload();
+      refreshStats();
     } catch (err) {
       setActionError(errorMessage(err));
     } finally {
@@ -226,7 +236,7 @@ export function Campaigns() {
       </section>
       <div className="campaigns-side">
         <CreateCampaignForm onCreated={campaigns.reload} />
-        <UploadLeadsForm campaigns={campaigns.data ?? []} />
+        <UploadLeadsForm campaigns={campaigns.data ?? []} onUploaded={refreshStats} />
       </div>
     </div>
   );
