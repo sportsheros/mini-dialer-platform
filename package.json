@@ -19,6 +19,7 @@
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
+    "migration:run:prod": "typeorm -d dist/db/data-source.js migration:run",
     "seed": "ts-node --transpile-only src/db/seed.ts",
     "simulate": "ts-node --transpile-only scripts/simulate-load.ts",
     "concurrency:check": "ts-node --transpile-only scripts/concurrency-check.ts",
