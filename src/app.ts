@@ -8,6 +8,7 @@ import { agentsRouter } from './modules/agents/agents.routes';
 import { campaignsRouter } from './modules/campaigns/campaigns.routes';
 import { dncRouter } from './modules/dnc/dnc.routes';
 import { healthRouter } from './modules/health/health.routes';
+import { webhooksRouter } from './modules/webhooks/webhooks.routes';
 
 /** Builds the Express app without listening, so tests can drive it with Supertest. */
 export function createApp(): Express {
@@ -28,6 +29,11 @@ export function createApp(): Express {
   );
 
   app.use(healthRouter);
+
+  // Webhooks authenticate with an HMAC signature instead of the API key, and are exempt from the
+  // per-IP limit: a provider sends all traffic from a few IPs, and throttling it would just
+  // cause retries. Mounted before the `/api` stack so that stack never sees them.
+  app.use('/api/webhooks', webhooksRouter);
 
   const api = Router();
   api.use('/agents', agentsRouter);
