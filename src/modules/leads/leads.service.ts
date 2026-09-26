@@ -3,7 +3,7 @@ import { queryRows } from '../../lib/sql';
 import { Campaign, Lead, LeadStatus } from '../../entities';
 import { NotFoundError } from '../../errors/AppError';
 import { type Paginated, toSkipTake } from '../../lib/pagination';
-import { isE164, normalizePhone } from '../../lib/phone';
+import { prepareLeads } from './leads.prepare';
 import { statsCache } from '../stats/stats.cache';
 import type { ListLeadsQuery, UploadLeadsInput } from './leads.schema';
 
@@ -16,33 +16,6 @@ export interface UploadResult {
   dnc: number;
   /** Not a valid E.164 number after normalisation. */
   invalid: number;
-}
-
-interface Candidate {
-  phone: string;
-  name: string | null;
-}
-
-/** Pure step: normalise, drop invalid numbers, dedupe within the payload (first one wins). */
-export function prepareLeads(rows: UploadLeadsInput): {
-  candidates: Candidate[];
-  invalid: number;
-  duplicates: number;
-} {
-  const seen = new Map<string, Candidate>();
-  let invalid = 0;
-  let duplicates = 0;
-  for (const row of rows) {
-    const phone = normalizePhone(row.phone);
-    if (!isE164(phone)) {
-      invalid++;
-    } else if (seen.has(phone)) {
-      duplicates++;
-    } else {
-      seen.set(phone, { phone, name: row.name || null });
-    }
-  }
-  return { candidates: [...seen.values()], invalid, duplicates };
 }
 
 export const leadsService = {
