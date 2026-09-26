@@ -3,6 +3,7 @@ import http from 'node:http';
 import { env } from './config/env';
 import { AppDataSource } from './db/data-source';
 import { logger } from './lib/logger';
+import { closeQueues } from './lib/queue';
 import { redis } from './lib/redis';
 import { initSocket } from './lib/socket';
 import { agentPool } from './modules/agents/agentPool';
@@ -38,7 +39,8 @@ async function main(): Promise<void> {
       const closed = new Promise<void>((resolve) => server.close(() => resolve()));
       await realtime.close(); // also disconnects websocket clients so server.close can finish
       await closed;
-      // 2. Close datastores last, after nothing can use them anymore.
+      // 2. Close the queue producer, then datastores last, after nothing can use them anymore.
+      await closeQueues();
       await AppDataSource.destroy();
       await redis.quit();
       logger.info('Shutdown complete');
