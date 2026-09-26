@@ -8,6 +8,9 @@ React **supervisor dashboard** shows agents, live calls, campaign stats and sear
 time. Telephony, speech-to-text and the LLM are simulated behind interfaces
 (`TelephonyProvider`, `SttProvider`, `LlmProvider`), so real providers can be plugged in later.
 
+> **Just want to run it?** Follow **[SETUP.md](SETUP.md)**: install Docker Desktop, then one command
+> starts everything, including automatic database creation and sample data.
+
 The focus is production-grade engineering: correctness under concurrency, idempotency, transactions,
 compensation, clear errors, and documented trade-offs. See **[docs/DECISIONS.md](docs/DECISIONS.md)**.
 
