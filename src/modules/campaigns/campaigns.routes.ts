@@ -3,6 +3,7 @@ import { asyncHandler } from '../../lib/http';
 import { uuidParam } from '../../lib/pagination';
 import { validate } from '../../middlewares/validate';
 import { leadsController } from '../leads/leads.controller';
+import { statsController } from '../stats/stats.controller';
 import { listLeadsQuerySchema, uploadLeadsSchema } from '../leads/leads.schema';
 import { campaignsController } from './campaigns.controller';
 import {
@@ -55,4 +56,10 @@ campaignsRouter.get(
   '/:id/leads',
   validate({ params: uuidParam, query: listLeadsQuerySchema }),
   asyncHandler(leadsController.list),
+);
+
+campaignsRouter.get(
+  '/:id/stats',
+  validate({ params: uuidParam }),
+  asyncHandler(statsController.campaignStats),
 );

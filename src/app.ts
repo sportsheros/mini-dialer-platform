@@ -5,6 +5,7 @@ import { cors } from './middlewares/cors';
 import { rateLimit } from './middlewares/rateLimit';
 import { requestLogger } from './middlewares/requestId';
 import { agentsRouter } from './modules/agents/agents.routes';
+import { callsRouter } from './modules/calls/calls.routes';
 import { campaignsRouter } from './modules/campaigns/campaigns.routes';
 import { dncRouter } from './modules/dnc/dnc.routes';
 import { healthRouter } from './modules/health/health.routes';
@@ -39,6 +40,7 @@ export function createApp(): Express {
   api.use('/agents', agentsRouter);
   api.use('/campaigns', campaignsRouter);
   api.use('/dnc', dncRouter);
+  api.use('/calls', callsRouter);
   app.use('/api', rateLimit(), apiKeyAuth, api);
 
   app.use(notFoundHandler);

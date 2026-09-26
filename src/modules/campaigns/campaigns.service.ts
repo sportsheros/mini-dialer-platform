@@ -4,6 +4,7 @@ import { Campaign, CampaignStatus } from '../../entities';
 import { ConflictError, InvalidStateTransitionError, NotFoundError } from '../../errors/AppError';
 import { type Paginated, toSkipTake } from '../../lib/pagination';
 import { publish } from '../../lib/realtime';
+import { statsCache } from '../stats/stats.cache';
 import type {
   CreateCampaignInput,
   ListCampaignsQuery,
@@ -63,6 +64,7 @@ export const campaignsService = {
       await this.getById(id); // 404 if it doesn't exist
       throw new ConflictError('Pause the campaign before deleting it');
     }
+    await statsCache.invalidate(id);
   },
 
   /**
