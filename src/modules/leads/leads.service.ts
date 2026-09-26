@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../db/data-source';
+import { queryRows } from '../../lib/sql';
 import { Campaign, Lead, LeadStatus } from '../../entities';
 import { NotFoundError } from '../../errors/AppError';
 import { type Paginated, toSkipTake } from '../../lib/pagination';
@@ -68,14 +69,16 @@ export const leadsService = {
       }
 
       const phones = candidates.map((c) => c.phone);
-      const dncRows: { phone: string }[] = await manager.query(
+      const dncRows = await queryRows<{ phone: string }>(
+        manager,
         'SELECT phone FROM dnc_numbers WHERE phone = ANY($1::varchar[])',
         [phones],
       );
       const dncSet = new Set(dncRows.map((r) => r.phone));
 
       // unnest() turns three parallel arrays into rows: one round-trip for up to 5,000 leads.
-      const insertedRows: { status: LeadStatus }[] = await manager.query(
+      const insertedRows = await queryRows<{ status: LeadStatus }>(
+        manager,
         `INSERT INTO leads ("campaignId", phone, name, status)
          SELECT $1, t.phone, t.name, t.status
          FROM unnest($2::varchar[], $3::varchar[], $4::lead_status[]) AS t(phone, name, status)

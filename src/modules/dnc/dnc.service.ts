@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../db/data-source';
+import { queryRows } from '../../lib/sql';
 import { DncNumber, LeadStatus } from '../../entities';
 import { NotFoundError } from '../../errors/AppError';
 import { type Paginated, type Pagination, toSkipTake } from '../../lib/pagination';
@@ -27,7 +28,8 @@ export const dncService = {
 
     // One transaction: the number is on the list AND its pending leads are blocked, or neither.
     return AppDataSource.transaction(async (manager) => {
-      const added: unknown[] = await manager.query(
+      const added = await queryRows<unknown>(
+        manager,
         `INSERT INTO dnc_numbers (phone, reason)
          SELECT * FROM unnest($1::varchar[], $2::varchar[])
          ON CONFLICT (phone) DO NOTHING
@@ -35,7 +37,8 @@ export const dncService = {
         [phones, phones.map((p) => byPhone.get(p) ?? null)],
       );
       // Leads already `dialing` are caught by the dialer's DNC re-check or are already ringing.
-      const marked: unknown[] = await manager.query(
+      const marked = await queryRows<unknown>(
+        manager,
         `UPDATE leads SET status = $2, "updatedAt" = now()
          WHERE phone = ANY($1::varchar[]) AND status = $3
          RETURNING id`,
