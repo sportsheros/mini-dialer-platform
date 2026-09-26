@@ -1,5 +1,15 @@
 # Mini Dialer Platform — AI-assisted outbound contact center backend
 
+## ▶ Demo video (90 seconds)
+
+[![Watch the 90-second demo](docs/media/demo-preview.png)](docs/media/mini-dialer-demo.mp4)
+
+**[▶ Watch the demo video (MP4, 1:30)](docs/media/mini-dialer-demo.mp4)**: live dialing, agent routing,
+lead upload edge cases, and AI summaries with QA scores, recorded from the running app. Re-record it
+anytime with `npm run demo:record`.
+
+---
+
 Supervisors create **campaigns** and upload **leads**. A **dialer worker** claims leads safely across
 many worker processes, respects a per-campaign **calls-per-second** limit and the **Do-Not-Call** list,
 and places calls through a telephony provider. When a call is answered, the platform **atomically routes
