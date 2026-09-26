@@ -23,8 +23,6 @@ export const redisKeys = {
 export function createRedis(name: string, overrides: RedisOptions = {}): Redis {
   const client = new Redis(env.REDIS_URL, {
     connectionName: `mini-dialer:${name}`,
-    // Keep v5 wire protocol: behaves identically on Redis 6/7 and on managed ElastiCache.
-    protocol: 2,
     ...overrides,
   });
   client.on('error', (err) => logger.error({ err, connection: name }, 'Redis connection error'));
